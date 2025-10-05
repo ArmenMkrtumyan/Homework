@@ -1,0 +1,229 @@
+---
+title: "Marketing Analytics"
+subtitle: "Homework 1"
+author: "Armen Mkrtumyan"
+date: "2025-10-02"
+output_file: "report/Marketing_Analytics"
+output:
+#  html_document:
+#    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+bibliography: references.bib
+csl: apa.csl
+header-includes:
+  - \usepackage{xcolor}
+  - \usepackage{hyperref}
+  - \hypersetup{colorlinks=true,urlcolor=blue}
+  - \newcommand{\pdfhref}[2]{\href{#1}{\underline{\textcolor{blue}{#2}}}}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+options(warn = -1)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+```
+
+
+# Assignment Overview
+
+Every year, *Time* magazine publishes a list of the top 100 innovations of that year.
+For this assignment, you will:
+
+### 1. Choose an innovation from the list
+The link to the 2024 innovations list is [here](https://docs.google.com/spreadsheets/d/17OXyBGSex3BYzAiR1eLlIGdg5_x7YCr55IfDED9USJA/edit?gid=0#gid=0&range=A28:D28). Once you select a product from the list, add its link.
+
+Added - [here](https://docs.google.com/spreadsheets/d/17OXyBGSex3BYzAiR1eLlIGdg5_x7YCr55IfDED9USJA/edit?gid=0#gid=0&range=A28:D28)
+
+### 2. Identify a similar innovation from the past. Reflect on an innovation that resembles the one you’ve chosen. In **1–2 paragraphs**, justify your choice by comparing both innovations in terms of their **functionality, technology, or market impact**.
+
+I will compare it to Tinder(2012) which is a swipe-to-match dating app. 
+
+![](img/rizz_logo.png){width=40%}
+
+The product I have chosen takes dating apps on the next level. It helps its users to write texts and understand each others behaviours - in order to give them appropriate and well thought responses. Both products are intended to improve romantic interactions, but at different stages.
+
+- **Technology**
+
+Tinder’s role was making it easier for people to find matches by introducing mutual-opt-in matching and a mobile-first UI. What Rizz does it uses ChatGPT trained by professional dating coaches to provide suggested responses and other messaging guidances.Tinder was primarily a UX + network effects breakthrough, whereas Rizz is a generative AI/NLP breakthrough layered on today’s dating platforms.
+
+- **Functionality**
+
+Tinder solved the discovery problem, it matches two strangers via swipe-based system (mutually agreed). Rizz solved the next challenge - the conversation itself.
+
+
+- **Market Impact**
+
+Tinder had 100 million + downloads in Play Store (App store downloads are not public), whereas Rizz had 5 million + downloads in Play Store(App store downloads are not public). Tinder became a huge, worldwide dating marketplace with strong effects. Rizz is much newer, with a smaller share, but In my opinion, it has a huge potential if it works as marketed.
+
+### 3. Find historical data
+Use **Statista** (the university provides access through AUA Wi-Fi) or another reliable resource to find a **time series** that matches your look-alike innovation.  
+Provide the **reference for the data source**.
+
+I used **Business of Apps** as the primary source for Tinder figures [@businessofapps2025],  
+and **DemandSage** as a secondary compilation that reproduces those figures [@demandsage2025].  
+Subscription-rate medians for our *N₀* proxy come from **RevenueCat** [@revenuecat2025].
+
+##### Note. DemandSage reproduces figures from Business of Apps;Business of Apps is treated as the primary source and DemandSage as a secondary compilation.
+
+### 4. Estimate Bass Model parameters
+Using the time series data for your look-alike innovation, estimate the **Bass diffusion model parameters**:
+
+- Coefficient of innovation (*p*)  
+- Coefficient of imitation (*q*)  
+- Market potential (*M*)
+
+```{r}
+
+df <- read.csv("data/tinder_subscribers.csv")
+
+df$t <- seq_len(nrow(df))
+
+bass_cum <- function(t, p, q, M) {
+  M * (1 - exp(-(p + q) * t)) / (1 + (q/p) * exp(-(p + q) * t))
+}
+
+fit <- nls(
+  subscribers_millions ~ bass_cum(t, p, q, M),
+  data = df,
+  # M should be > max(df$subscribers_millions), so I will set it to 12. Values 
+  # of p and q are just starting initial guesses
+  start = list(p = 0.02, q = 0.6, M = 12)  
+)
+summary(fit)
+```
+
+#### We can see from here that p=0.0276 - meaning that each year, a non adopter has 2.76% baseline chance to adopt even if nobody else has adopted. Also q=0.763, meaning that adoption chance increases with the share already adopted. 11.53 for M is 11.53 million estimated market potential.
+
+
+### 5. Predict the diffusion of the chosen innovation
+Based on the **Bass Model**, predict the diffusion path of the chosen innovation.  
+Ensure your predictions are **supported with relevant data**.
+
+#### Baseline and scenarios
+
+So we will be using the parameters we got from Tinder data, in order to make assumptions about Rizz app. As a starting point I decided to choose **N0 = 0.105**, since Rizz does not disclose how many of its users are paid users and I had to use some rough estimates:
+
+- in website https://www.revenuecat.com/state-of-subscription-apps-2025/ we have that paid medians are around **1.5% (low-priced apps)** and **2.7% (high-priced apps)**
+
+- we will use midpoint **2.1%**
+
+- **5000000 (Play Store) × 0.021 = 105000**
+
+Lets test 3 scenarious for **M** taking **100 million** as the global ceiling.
+
+- **Conservative:** M = 25 million (Rizz ends up a niche tool)  
+- **Base:** M = 50 million (Rizz wins meaningful share of daters)  
+- **Ambitious:** M = 100 million (Rizz becomes the go-to dating assistant for most daters)
+
+
+```{r}
+p  <- 0.0276
+q  <- 0.763
+N0 <- 0.105
+
+forecast_years <- 8
+scenarios <- c(Conservative = 25, Base = 50, Ambitious = 100)  # M in millions
+
+make_path <- function(M, p, q, N0, horizon){
+  out <- data.frame(year = 0:horizon,
+                    new  = rep(NA_real_, horizon + 1),
+                    cum  = rep(NA_real_, horizon + 1))
+  out$cum[1] <- N0
+  for (t in 2:nrow(out)) {
+    Nprev      <- out$cum[t - 1]
+    out$new[t] <- (p + q * (Nprev / M)) * (M - Nprev)
+    out$cum[t] <- Nprev + out$new[t]
+  }
+  out$M <- M
+  out
+}
+
+paths <- do.call(rbind, lapply(names(scenarios), function(nm){
+  Mval <- as.numeric(scenarios[[nm]])
+  df   <- make_path(M = Mval, p = p, q = q, N0 = N0, horizon = forecast_years)
+  df$scenario <- nm
+  df
+}))
+
+paths_round <- paths %>%
+  mutate(cum = as.numeric(cum),
+         new = as.numeric(new))
+
+peaks <- paths_round %>%
+  group_by(scenario) %>%
+  slice_max(new, n = 1, with_ties = FALSE)
+
+ggplot(paths_round, aes(x = year, y = cum, color = scenario)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(data = peaks, aes(x = year, y = cum), size = 2.5) +
+  geom_text(
+    data = peaks,
+    aes(label = paste0("Peak new in y", year, "\n", round(new,1), "M")),
+    vjust = -0.8, size = 3
+  ) +
+  labs(
+    title = "Predicted Diffusion Path of Rizz (Bass model)",
+    subtitle = "Cumulative adopters (millions); Year 0 = today; p=0.0276, q=0.763",
+    x = "Years from today",
+    y = "Cumulative adopters (M)",
+    color = "Scenario (M)"
+  ) +
+  scale_x_continuous(breaks = 0:max(paths_round$year)) +
+  theme_minimal(base_size = 12)
+```
+
+- Conservative (M=25 million)
+
+##### We see it peaks after 6 years, reaching around 5 million customer increase in 1 year(visible also in later tables). Then, as new adopter numbers start to decline, we finally reach 24 million cumulative users by the end of year 8
+
+- Base (M=50 million)
+
+##### We see it peaks after 6 years, reaching around 10 million customer increase in 1 year(visible also in later tables). Then, as new adopter numbers start to decline, we reach 47.5 million cumulative users by the end of year 8
+
+- Ambitious (M=100 million)
+
+##### We see it peaks after 6th year with around 20 million new users increase in 1 year(visible also in later tables). Then, as new adopter numbers starts to decline, as the market gets saturated, by year 8 we approach around 95 million cumulative users.**
+
+### 6. Choose a scope (global or country-specific)
+
+Decide whether to analyze the diffusion **worldwide** or within a **specific country**.  
+Justify your choice with **references or data**.
+
+### **Global**
+
+Rizz targets users **across all dating platforms**, not a single market, and **Tinder scaled globally** as well.  
+Therefore, we **model diffusion worldwide** and test **different market potential (M) scenarios** reflecting alternative global ceilings.
+
+Primary evidence for Tinder’s global scale comes from @businessofapps2025; a secondary compilation that reproduces those figures is @demandsage2025.
+
+### 7. Estimate the number of adopters by period
+Using your Bass model parameters, estimate the **number of adopters** of the innovation over time.  
+If necessary, use **Fermi’s logic** to make rough estimations in the absence of concrete data.
+
+```{r}
+colnames_to_use <- c("Year","New (M)","Cumulative (M)","M (M)","Scenario")
+paths %>%
+  filter(scenario == "Conservative") %>%
+  kbl(caption = "Conservative", digits = 2, align = "c", row.names = FALSE, col.names = colnames_to_use) %>%
+  kable_styling(latex_options = c("striped","hold_position"))
+
+paths %>%
+  filter(scenario == "Base") %>%
+  kbl(caption = "Base Scenario", digits = 2, align = "c", row.names = FALSE, col.names = colnames_to_use) %>%
+  kable_styling(latex_options = c("striped","hold_position"))
+
+paths %>%
+  filter(scenario == "Ambitious") %>%
+  kbl(caption = "Ambitious Scenario", digits = 2, align = "c", row.names = FALSE, col.names = colnames_to_use) %>%
+  kable_styling(latex_options = c("striped","hold_position"))
+```
+
+## References
