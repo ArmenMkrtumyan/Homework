@@ -16,11 +16,10 @@ All code, data, and generated reports are contained within this directory struct
   - `tinder_subscribers.csv`: Historical Tinder subscriber counts (millions), used to estimate the Bass model parameters.
 
 - **report/**: Contains all generated reports.
-  - `Marketing_Analytics.html`: Final report in HTML format.
-  - `Marketing_Analytics.pdf`: Final report in PDF format (optional).
-  - These files are automatically created when knitting or rendering the `.Rmd`.
+  - `Marketing_Analytics.html`: Final report in HTML format. (Nicer view)
+  - `Marketing_Analytics.pdf`: Final report in PDF format.
 
-- **root directory (this folder)**: Holds the source and configuration files.
+- **root directory**: Holds the source and configuration files.
   - `Marketing_Analytics.Rmd`: Main R Markdown script that builds the report.
   - `references.bib`: Bibliography file with cited data sources.
   - `apa.csl`: Citation style file (APA 7th edition).
