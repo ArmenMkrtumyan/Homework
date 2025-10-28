@@ -55,7 +55,7 @@ The experiment generates:
    - `thompson_sampling_results.csv`: Detailed results for Thompson Sampling
 
 3. **Logs** (saved to `logs/` folder):
-   - `bandit_experiment_YYYYMMDD_HHMMSS.log`: Complete execution log with timestamp and debug information
+   - `bandit_experiment_YYYYMMDD_HHMMSS.log`: Complete execution log with timestamp and debug information (shows locally, ignored in GitHub)
 
 ## Algorithms Implemented
 
