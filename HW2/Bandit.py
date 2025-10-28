@@ -11,9 +11,6 @@ from datetime import datetime
 log_filename = f"logs/bandit_experiment_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 logger.add(log_filename, level="DEBUG")
 
-#--------------------------------------#
-# HELPER FUNCTIONS
-#--------------------------------------#
 
 def format_axis(ax, title, xlabel, ylabel, legend=True, grid=True):
     """Helper to format matplotlib axes consistently
@@ -162,11 +159,10 @@ class Bandit(ABC):
 
     @abstractmethod
     def __repr__(self):
-        """
-        Return string representation of the bandit
+        """Return string representation of the bandit
         
-        Returns:
-            str: Human-readable description of the bandit instance
+        :returns: Human-readable description of the bandit instance
+        :rtype: str
         """
         pass
 
@@ -185,6 +181,8 @@ class Bandit(ABC):
     def update(self):
         """Update internal statistics after pulling an arm
 
+        :returns: None
+
         """
         pass
 
@@ -193,6 +191,8 @@ class Bandit(ABC):
         """Run the full bandit experiment for specified number of trials
         
         Executes the pull-update loop for all trials and logs progress.
+
+        :returns: None
 
         """
         pass
@@ -206,15 +206,25 @@ class Bandit(ABC):
         - Total reward and regret
         - Arm pull statistics
 
+        :returns: None
+
         """
         pass
     
     def cumulative_reward(self):
-        """Get cumulative rewards over time"""
+        """Get cumulative rewards over time
+        
+        :returns: Array of cumulative rewards at each trial
+        :rtype: numpy.ndarray
+        """
         return np.cumsum(self.rewards_history)
     
     def cumulative_regret(self):
-        """Get cumulative regrets over time"""
+        """Get cumulative regrets over time
+        
+        :returns: Array of cumulative regrets at each trial
+        :rtype: numpy.ndarray
+        """
         optimal_mean = max(self.true_means)
         optimal_rewards = np.arange(1, len(self.rewards_history) + 1) * optimal_mean
         return optimal_rewards - self.cumulative_reward()
@@ -411,7 +421,11 @@ class EpsilonGreedy(Bandit):
             self.c = self.epsilon_params.get("c", math.e)
     
     def __repr__(self):
-        """String representation of the bandit"""
+        """String representation of the bandit
+        
+        :returns: Human-readable description
+        :rtype: str
+        """
         return f"EpsilonGreedy(arms={self.n_arms}, strategy={self.epsilon_strategy}, trials={self.trials})"
     
     def _epsilon(self, t):
@@ -471,6 +485,7 @@ class EpsilonGreedy(Bandit):
 
         :param chosen_arm: index of the arm that was pulled
         :param reward: continuous reward received
+        :returns: None
 
         """
         # Update counts and sums
@@ -494,6 +509,7 @@ class EpsilonGreedy(Bandit):
         """Run the experiment for n_trials
 
         :param n_trials: number of trials to run (uses self.trials if None) (Default value = None)
+        :returns: None
 
         """
         if n_trials is None:
@@ -514,6 +530,7 @@ class EpsilonGreedy(Bandit):
         """Save results to CSV and log statistics
 
         :param filename: name of the CSV file to save results (Default value = "report/epsilon_greedy_results.csv")
+        :returns: None
 
         """
         # Save to CSV using helper function
@@ -587,6 +604,11 @@ class ThompsonSampling(Bandit):
         logger.info(f"Initialized ThompsonSampling with {self.n_arms} arms (Gaussian, known precision τ={self.tau})")
     
     def __repr__(self):
+        """String representation of the bandit
+        
+        :returns: Human-readable description
+        :rtype: str
+        """
         return f"ThompsonSampling(arms={self.n_arms}, Gaussian, tau={self.tau}, trials={self.trials})"
     
     def pull(self):
@@ -622,6 +644,7 @@ class ThompsonSampling(Bandit):
 
         :param chosen_arm: index of the arm that was pulled
         :param reward: continuous reward received
+        :returns: None
 
         """
         # Update counts and sums
@@ -648,6 +671,7 @@ class ThompsonSampling(Bandit):
         """Run the Thompson Sampling experiment
 
         :param n_trials: number of trials to run (uses self.trials if None) (Default value = None)
+        :returns: None
 
         """
         if n_trials is None:
@@ -668,6 +692,7 @@ class ThompsonSampling(Bandit):
         """Save results to CSV and log statistics
 
         :param filename: name of the CSV file to save results (Default value = "report/thompson_sampling_results.csv")
+        :returns: None
 
         """
         # Save to CSV using helper function
