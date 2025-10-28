@@ -1,3 +1,12 @@
+# Multi-Armed Bandit Experiment - Python Dependencies
+# Python 3.8+ required
+# Install with: pip install -r requirements.txt
+
+# Logging with advanced features
 loguru==0.7.2
+
+# Numerical computing and array operations
 numpy==1.24.3
+
+# Plotting and visualization
 matplotlib==3.7.1

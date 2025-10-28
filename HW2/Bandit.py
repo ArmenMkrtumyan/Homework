@@ -4,10 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import math
+import os
 from datetime import datetime
 
-# Configure logger to save to file in logs folder
+# Create necessary directories if they don't exist
 # NOTE: All paths in this file are RELATIVE paths for reproducibility across environments
+os.makedirs("img", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+os.makedirs("report", exist_ok=True)
+
+# Configure logger to save to file in logs folder
 log_filename = f"logs/bandit_experiment_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 logger.add(log_filename, level="DEBUG")
 
@@ -1012,6 +1018,22 @@ if __name__=='__main__':
     _create_final_comparison_plot(epsilon_results, ts_bandit)
     
     log_section("EXPERIMENT COMPLETE")
+    
+    # Calculate final metrics
+    optimal_mean = max(best_epsilon_bandit.true_means)
+    eg_metrics = calculate_metrics(best_epsilon_bandit, "EpsilonGreedy")
+    ts_metrics = calculate_metrics(ts_bandit, "ThompsonSampling")
+    
     logger.info(f"Best Epsilon Strategy: {best_epsilon_name}")
-    logger.info(f"Best Epsilon Reward: {best_epsilon_bandit.total_reward:.2f}")
-    logger.info(f"Thompson Sampling Reward: {ts_bandit.total_reward:.2f}")
+    logger.info(f"  Total Reward: {best_epsilon_bandit.total_reward:.2f}")
+    logger.info(f"  Total Regret: {eg_metrics['total_regret']:.2f}")
+    logger.info(f"  Avg Reward: {eg_metrics['avg_reward']:.4f}")
+    logger.info(f"  Avg Regret: {eg_metrics['avg_regret']:.4f}")
+    logger.info("")
+    logger.info(f"Thompson Sampling:")
+    logger.info(f"  Total Reward: {ts_bandit.total_reward:.2f}")
+    logger.info(f"  Total Regret: {ts_metrics['total_regret']:.2f}")
+    logger.info(f"  Avg Reward: {ts_metrics['avg_reward']:.4f}")
+    logger.info(f"  Avg Regret: {ts_metrics['avg_regret']:.4f}")
+    logger.info("")
+    logger.info(f"Winner: {'Thompson Sampling' if ts_bandit.total_reward > best_epsilon_bandit.total_reward else best_epsilon_name} (by {abs(ts_bandit.total_reward - best_epsilon_bandit.total_reward):.2f} total reward)")
